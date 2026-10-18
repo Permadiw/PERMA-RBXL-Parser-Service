@@ -60,6 +60,13 @@ async fn convert(body: Bytes) -> Response {
     // and clone their contents beneath those folders. Non-service roots are retained.
     let mut output_dom = WeakDom::new(InstanceBuilder::new("DataModel"));
     let output_root = output_dom.root_ref();
+    // RBXM consumers in lightweight executors commonly expect one model root.
+    // A place contains many service roots, so package all converted services and
+    // non-service roots beneath one ordinary Model before serializing.
+    let model_root = output_dom.insert(
+        output_root,
+        InstanceBuilder::new("Model").with_name("PERMA_RBXL_IMPORT"),
+    );
     let mut source_refs = Vec::new();
     let mut destinations = Vec::new();
     let mut service_count = 0usize;
@@ -73,7 +80,7 @@ async fn convert(body: Bytes) -> Response {
         if is_service(&class_name, &name) {
             let folder_name = if !name.is_empty() { name } else { class_name.clone() };
             let folder_ref = output_dom.insert(
-                output_root,
+                model_root,
                 InstanceBuilder::new("Folder").with_name(folder_name),
             );
             service_count += 1;
@@ -86,7 +93,7 @@ async fn convert(body: Bytes) -> Response {
             }
         } else {
             source_refs.push(root_ref);
-            destinations.push(output_root);
+            destinations.push(model_root);
         }
     }
 
@@ -109,7 +116,7 @@ async fn convert(body: Bytes) -> Response {
         output_dom.transfer_within(cloned_ref, destination_ref);
     }
 
-    let serialized_roots: Vec<_> = output_dom.root().children().iter().copied().collect();
+    let serialized_roots = vec![model_root];
     if serialized_roots.is_empty() {
         return (StatusCode::INTERNAL_SERVER_ERROR, "Converted model has no root objects").into_response();
     }
