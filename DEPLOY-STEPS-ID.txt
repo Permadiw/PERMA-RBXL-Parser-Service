@@ -1,0 +1,13 @@
+LANGKAH DEPLOY PERMA RBXL PARSER (TERPISAH)
+
+1. Ekstrak PERMA-RBXL-Parser-Service.zip.
+2. Buat service/container baru di hosting yang mendukung Docker (contoh Railway). Jangan mengubah Worker Cloudflare key yang sekarang.
+3. Upload/push folder `perma-rbxl-parser` sebagai proyek service baru. Build menggunakan Dockerfile di folder tersebut.
+4. Pastikan hosting mengatur variabel PORT otomatis. Jika diminta, gunakan 8080.
+5. Setelah deploy, buka URL publik service + `/health`. Harus muncul: PERMA RBXL Parser online.
+6. Salin URL HTTPS service tanpa `/health` dan tanpa slash akhir.
+7. Terapkan blok dari `IMPORTER-INTEGRATION.lua.txt` ke `main.lua`: baris konfigurasi di bagian atas, lalu blok kedua di lokasi yang dijelaskan dalam file itu.
+8. Isi `RBXL_PARSER_URL` dengan URL HTTPS yang tadi. Jangan ubah URL key Worker atau loader.
+9. Tes file RBXL kecil terlebih dahulu, kemudian file lebih besar. File RBXM yang sudah berfungsi seharusnya tetap menggunakan jalur lama.
+
+CATATAN JUJUR: Saya dapat menyiapkan source code dan integrasi, tetapi tidak dapat menerbitkan URL publik atas nama Anda tanpa akses akun hosting. Sampai service di-deploy dan URL dimasukkan, parser belum aktif. Delta juga harus memiliki loadrbxm/readrbxm yang kompatibel untuk membaca hasil konversi.

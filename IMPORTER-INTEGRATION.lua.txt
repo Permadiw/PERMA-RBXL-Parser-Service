@@ -1,0 +1,41 @@
+-- OPTIONAL RBXL PARSER INTEGRATION
+-- 1) Put this near the top of main.lua (after services):
+local RBXL_PARSER_URL = "" -- After deployment, set e.g. "https://your-parser-service.example" (no trailing slash)
+
+-- 2) Inside loadFile(), inside `elseif ftype=="RBXL" then`, insert this block
+-- immediately BEFORE the comment `-- Try a dedicated place loader first`.
+-- The existing native-loader fallbacks remain untouched.
+if RBXL_PARSER_URL ~= "" then
+    local converted, parserStatus = httpRequest(
+        RBXL_PARSER_URL .. "/convert",
+        "POST",
+        { ["Content-Type"] = "application/octet-stream" },
+        data
+    )
+    if converted and (not parserStatus or (parserStatus >= 200 and parserStatus < 300)) then
+        local parserLoader = getFn("loadrbxm") or getFn("readrbxm")
+        if type(parserLoader) == "function" then
+            local okConverted, convertedObjects = pcall(parserLoader, converted)
+            local objects = okConverted and (
+                typeof(convertedObjects) == "Instance" and { convertedObjects }
+                or (type(convertedObjects) == "table" and convertedObjects or {})
+            ) or {}
+            if #objects > 0 then
+                local loaded, msg = insertLoaded(objects, "PERMA RBXL Parser -> RBXM")
+                if loaded then return true, msg end
+                table.insert(lastError, "Parser result: " .. shortError(msg))
+            else
+                table.insert(lastError, "Parser response tidak bisa dibaca oleh loadrbxm/readrbxm.")
+            end
+        else
+            table.insert(lastError, "Parser berhasil mengonversi, tetapi executor tidak menyediakan loadrbxm/readrbxm.")
+        end
+    else
+        table.insert(lastError, "Parser service gagal/tidak terjangkau (HTTP " .. tostring(parserStatus or "unknown") .. ").")
+    end
+end
+
+-- Safety notes:
+-- * Leave RBXL_PARSER_URL empty until the separate service is deployed and /health works.
+-- * This block only runs for .rbxl; existing .rbxm/.rbxmx/.rbxlx paths are not changed.
+-- * Do not change the key API URL or loader URL.

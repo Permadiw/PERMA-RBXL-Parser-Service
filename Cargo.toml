@@ -1,0 +1,11 @@
+[package]
+name = "perma-rbxl-parser"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.8"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }
+rbx_binary = "3.0.1"
+rbx_dom_weak = "4.2.0"
+tower-http = { version = "0.6", features = ["cors", "limit", "trace"] }
